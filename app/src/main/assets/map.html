@@ -1,0 +1,39 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><style>html,body,#map{height:100%;width:100%;margin:0;background:#dbe5dc;overflow:hidden}#status{position:absolute;top:12px;left:12px;max-width:70%;padding:8px 12px;background:#fff;border-radius:8px;color:#244337;font:14px sans-serif;display:none}.pin{display:grid;place-items:center;width:24px;height:24px;background:#075949;color:#fff;border:3px solid white;border-radius:50%;font-size:16px;font-weight:bold;box-shadow:0 0 0 5px #168c6255}</style></head><body><div id="map"></div><div id="status"></div><script>
+(function(){
+ // 电视端优先使用高德栅格底图，避免低性能 WebGL 环境的缩放卡顿。
+ window.forbidenWebGL=true;
+ var api='https://byd-flashcharge-pages-api.netlify.app', map, mass, selection, pending, pendingSelection;
+ var icon='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="8" cy="8" r="6.5" fill="#198a63" stroke="white" stroke-width="2"/></svg>');
+ function message(t){var el=document.getElementById('status');el.textContent=t;el.style.display=t?'block':'none'}
+ function setPoints(data){
+  pending=data; if(!map||!mass)return;
+  var points=data.points||[]; mass.setData(points.map(function(p){return {lnglat:[p[0],p[1]]}}));
+  if(data.scope && points.length){
+    var west=180,east=-180,south=90,north=-90;
+    points.forEach(function(p){west=Math.min(west,p[0]);east=Math.max(east,p[0]);south=Math.min(south,p[1]);north=Math.max(north,p[1])});
+    if(east-west<.01&&north-south<.01)map.setZoomAndCenter(13,[west,south],true);else map.setBounds(new AMap.Bounds([west,south],[east,north]),true,[36,36,70,36]);
+  }else if(!data.scope)map.setBounds(new AMap.Bounds([73,18],[135,53]),true,[20,20,20,20]);
+  if(pendingSelection)window.tvSelect(pendingSelection[0],pendingSelection[1]);
+ }
+ window.tvSetPoints=setPoints;
+ window.tvSelect=function(lng,lat){pendingSelection=[lng,lat];if(!map)return;if(selection)selection.setMap(null);selection=new AMap.Marker({map:map,position:[lng,lat],content:'<span class="pin">ϟ</span>',offset:new AMap.Pixel(-12,-12),zIndex:130});map.setZoomAndCenter(Math.max(map.getZoom(),11),[lng,lat],true)};
+ window.tvClearSelection=function(){pendingSelection=null;if(selection){selection.setMap(null);selection=null}};
+ window.tvZoom=function(delta){if(map)map.setZoom(Math.min(18,Math.max(3,map.getZoom()+delta)),true)};
+ window.tvPan=function(x,y){if(map)map.panBy(x,y)};
+ window.tvReset=function(){if(!map){location.reload();return}if(pending)setPoints(pending)};
+ fetch(api+'/api/amap-config').then(function(r){if(!r.ok)throw Error('地图配置暂不可用');return r.json()}).then(function(config){
+   if(!config.key)throw Error('地图配置暂不可用');
+   window._AMapSecurityConfig={serviceHost:api+'/_AMapService'};
+   var script=document.createElement('script');script.src='https://webapi.amap.com/maps?v=2.0&key='+encodeURIComponent(config.key);
+   script.onload=function(){try{
+     map=new AMap.Map('map',{center:[104.5,35.4],zoom:4,zooms:[3,18],resizeEnable:true,animateEnable:false,viewMode:'2D',mapStyle:'amap://styles/normal'});
+     function markerSize(){return map.getZoom()<6?6:map.getZoom()<9?10:16}
+     function markerStyle(size){return {url:icon,size:new AMap.Size(size,size),anchor:new AMap.Pixel(size/2,size/2)}}
+     var currentSize=markerSize();
+     mass=new AMap.MassMarks([],{zIndex:110,style:markerStyle(currentSize)});mass.setMap(map);map.on('zoomend',function(){var size=markerSize();if(size!==currentSize){currentSize=size;mass.setStyle(markerStyle(size))}});
+     message(''); if(pending)setPoints(pending);if(pendingSelection)window.tvSelect(pendingSelection[0],pendingSelection[1]);
+   }catch(e){message('高德地图初始化失败')}};
+   script.onerror=function(){message('高德地图加载失败，请检查网络')};document.head.appendChild(script);
+ }).catch(function(){message('高德地图暂不可用，请检查网络')});
+})();
+</script></body></html>
