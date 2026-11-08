@@ -1,5 +1,11 @@
 # 比亚迪闪充 Android TV
 
+## 下载安装
+
+[下载 Android TV 调试 APK](https://github.com/pengshengsongcode/byd-flashcharge-tv/releases/download/v2.0.0-debug.1/byd-flashcharge-tv-v2.0.0-debug.apk) · [查看发布说明](https://github.com/pengshengsongcode/byd-flashcharge-tv/releases/tag/v2.0.0-debug.1)
+
+支持 Android 6.0（API 23）及以上版本，已在索尼 Android 12 电视上验证。当前为调试签名的测试版。
+
 电视版使用独立原生遥控器界面，支持全国省、市、区县和北京站点浏览；右侧为独立高德地图。方向键移动焦点，确定键进入或刷新站点详情，返回键回到上一级。地图控件支持缩放、复位和遥控器方向键平移。站点列表按 20 条分批加载，可选择“加载更多站点”继续浏览；快速切换城市时地图会合并更新。最近新增仅按官方近期新站清单筛选，不代表该地区所有带新增标签的站点。
 
 应用启动先读取随 APK 附带的站点快照和区县索引，随后通过现有 API 更新，界面会标注数据来源和源数据时间。地图与实时数据需要网络。APK 不需要访问 GitHub Pages 来下载界面；地图组件使用原网站域名加载本地 HTML，以沿用现有高德和 API 的来源限制。高德安全密钥留在服务端，不打包进 APK。站点名称和详情按焦点逐个查询，遵守接口限流，未查询前显示占位信息。
